@@ -16,7 +16,7 @@ def gradcheck_naive(f, x):
 
     rndstate = random.getstate()
     random.setstate(rndstate)
-    fx, grad = f(x) # Evaluate function value at original point
+    fx, grad = f(x)  # Evaluate function value at original point
     h = 1e-4        # Do not change this!
 
     # Iterate over all indexes ix in x to check the gradient.
@@ -35,10 +35,18 @@ def gradcheck_naive(f, x):
         # Make sure you call random.setstate(rndstate)
         # before calling f(x) each time. This will make it possible
         # to test cost functions with built in randomness later.
+        xp = np.copy(x)
+        xp[ix] += h
+        rndstate = random.getstate()
+        random.setstate(rndstate)
+        fx_plus_h, _ = f(xp)
+        rndstate = random.getstate()
+        random.setstate(rndstate)
 
-        ### YOUR CODE HERE:
-        raise NotImplementedError
-        ### END YOUR CODE
+        xp[ix] -= 2 * h  # since we have already increased it by h previously
+        fx_minus_h, _ = f(xp)
+
+        numgrad = (fx_plus_h - fx_minus_h) / (2 * h)
 
         # Compare gradients
         reldiff = abs(numgrad - grad[ix]) / max(1, abs(numgrad), abs(grad[ix]))
@@ -82,4 +90,4 @@ def your_sanity_checks():
 
 if __name__ == "__main__":
     sanity_check()
-    your_sanity_checks()
+    # your_sanity_checks()
