@@ -1,5 +1,11 @@
 #!/usr/bin/env python
+"""
+In this module, the underlying implementation for word2vec uses 2 models - either skipGram or continuous bag of words
+(CBOW).
 
+Each of those 2 models can use one of 2 cost functions - either softmax or negative-sampling, each with their own
+corresponding derivatives (aka gradients)
+"""
 import numpy as np
 import random
 
@@ -7,17 +13,21 @@ from q1_softmax import softmax
 from q2_gradcheck import gradcheck_naive
 from q2_sigmoid import sigmoid, sigmoid_grad
 
+
 def normalizeRows(x):
     """ Row normalization function
 
     Implement a function that normalizes each row of a matrix to have
     unit length.
     """
+    # this is the same as norm function which takes sqrt(sum of squares of elements along each matrix-row)
+    norm_row = np.sqrt(np.sum(x**2, axis=1))  # axis = 0 is column-wise sum. axis=1 is row-wise sum
+    # returns [5, 2.25] for below example in `test_normalize_rows`
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
-
+    norm_col = np.reshape(norm_row, (-1, 1))  # reshape with as many `rows` as the length of the input array (-1) and
+    # 1 column
+    # gives [[5], [2.25]] or in other words, matrix transpose
+    x /= norm_col
     return x
 
 
@@ -30,7 +40,7 @@ def test_normalize_rows():
     print ""
 
 
-def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
+def softmaxCostAndGradient(vc_predicted, target, uw_output, dataset):
     """ Softmax cost function for word2vec models
 
     Implement the cost and gradients for one predicted word vector
@@ -39,17 +49,17 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     entropy loss.
 
     Arguments:
-    predicted -- numpy ndarray, predicted word vector (\hat{v} in
+    vc_predicted -- numpy ndarray, predicted word vector (\hat{v} in
                  the written component)
     target -- integer, the index of the target word
-    outputVectors -- "output" vectors (as rows) for all tokens
+    uw_output -- "output" vectors (as rows) for all tokens
     dataset -- needed for negative sampling, unused here.
 
     Return:
     cost -- cross entropy cost for the softmax word prediction
-    gradPred -- the gradient with respect to the predicted word
+    dJ_vc -- the gradient with respect to the predicted word
            vector
-    grad -- the gradient with respect to all the other word
+    dJ_uw -- the gradient with respect to all the other word
            vectors
 
     We will not provide starter code for this function, but feel
@@ -57,11 +67,23 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     assignment!
     """
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    N = uw_output.shape[0]  # n_words: vocab size
+    y = np.zeros(N)
+    y[target] = 1  # y is a 1-hot encoded vector with the actual word's index being 1 and rest of elements being 0
 
-    return cost, gradPred, grad
+    score = np.dot(vc_predicted, uw_output.T)  # vc dot uo_transpose which gives a vector of dimension (1, n_words)
+    y_hat = softmax(score)
+
+    # cross-entropy cost is given by formula in assignment 1.2b
+    cost = np.sum(-y * np.log(y_hat))
+
+    dout = y_hat - y  # (1, n_words)
+
+    grad_pred_dJ_vc = np.dot(dout, uw_output)  # (1, dim_embed)
+
+    grad_dJ_uw = np.dot(dout.T, vc_predicted)  # (n_words, dim_embed)
+
+    return cost, grad_pred_dJ_vc, grad_dJ_uw
 
 
 def getNegativeSamples(target, dataset, K):
@@ -76,7 +98,7 @@ def getNegativeSamples(target, dataset, K):
     return indices
 
 
-def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
+def negSamplingCostAndGradient(predicted_vc, target, outputVectors_uk, dataset,
                                K=10):
     """ Negative sampling cost function for word2vec models
 
@@ -95,11 +117,31 @@ def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
     indices = [target]
     indices.extend(getNegativeSamples(target, dataset, K))
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    cost = 0.0
+    sigmd_uoT_vc = sigmoid(np.dot(predicted_vc.reshape(-1), outputVectors_uk[target].T))
+    cost += -np.log(sigmd_uoT_vc)
 
-    return cost, gradPred, grad
+    gradPred_dJ_vc = np.zeros_like(predicted_vc)
+    gradPred_dJ_vc += (sigmd_uoT_vc - 1) * outputVectors_uk[target]
+
+    grad_dJ_uw = np.zeros_like(outputVectors_uk)
+    grad_dJ_uw[target:target + 1] = (sigmd_uoT_vc - 1) * predicted_vc
+
+    neg_samples = []
+    for i in range(K):
+        j = dataset.sampleTokenIdx()
+        if j == target or (j in neg_samples):
+            i -= 1  # if negative sample is same with target or already sampled, then resample.
+            continue
+        neg_samples.append(j)
+
+        sigmd_ukT_vc = sigmoid(-np.dot(predicted_vc.reshape(-1), outputVectors_uk[j].T))
+        cost += -np.log(sigmd_ukT_vc)  # cost for negative sample
+
+        grad_dJ_uw[j:j + 1] = (1 - sigmd_ukT_vc) * predicted_vc  # gradient for negative sample
+        gradPred_dJ_vc += (1 - sigmd_ukT_vc) * outputVectors_uk[j]
+
+    return cost, gradPred_dJ_vc, grad_dJ_uw
 
 
 def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
@@ -130,9 +172,14 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     gradIn = np.zeros(inputVectors.shape)
     gradOut = np.zeros(outputVectors.shape)
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    idx = tokens[currentWord]  # tokens['a'] = 1
+    input_vector = inputVectors[idx:idx+1]
+
+    for context in contextWords:
+        c, g_in, g_out = word2vecCostAndGradient(input_vector, tokens[currentWord], outputVectors, dataset)
+        cost += c
+        gradIn[idx:idx+1, :] += g_in
+        gradOut += g_out
 
     return cost, gradIn, gradOut
 
@@ -154,9 +201,13 @@ def cbow(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     gradIn = np.zeros(inputVectors.shape)
     gradOut = np.zeros(outputVectors.shape)
 
-    ### YOUR CODE HERE
-    raise NotImplementedError
-    ### END YOUR CODE
+    for contextWord in contextWords:
+        idx = tokens[contextWord]  # tokens['a'] = 1
+        input_vector = inputVectors[idx:idx + 1]
+        c, g_in, g_out = word2vecCostAndGradient(input_vector, tokens[currentWord], outputVectors, dataset)
+        cost += c
+        gradIn[idx:idx + 1, :] += g_in
+        gradOut += g_out
 
     return cost, gradIn, gradOut
 

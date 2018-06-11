@@ -1,0 +1,36 @@
+GloVe - Global vectors for word representations - Its an unsupervised learning algorithm for Natural Language Processing
+https://github.com/stanfordnlp/GloVe
+
+Highlights -
+------------
+1) Nearest neighbors - Euclidean distance or cosine similarity b/w 2 word vectors is an effective method for measuring
+semantic or linguistic similarity b/w 2 words.
+
+2) Linear substructures - Instead of a single scalar number to represent the difference between 2 words as in something
+like a levenshtein distance measure, glove computes differences between word vectors. For example - man and woman
+can be similar in terms of levenshtein distance, but their word vector differences captures semantic differences in
+their juxtaposition and context, depending on which they maybe diametrically opposite to each other.
+
+Training -
+------------
+Trained on global word-word co-occurence matrix in a corpus. 1-time upfront cost to parse whole document to compute this
+matrix. Further computations are easier since its a sparse matrix.
+
+It is a log-bilinear model with a weighted least-squares objective.
+
+Training objective for GloVe is to learn word vectors for words such that their dot product is equal to logarithm of
+word-word co-occurrence probability.
+------------
+
+Related application - Uber Eats : matching search query to restaurant orders
+https://eng.uber.com/uber-eats-query-understanding/
+
+1) Treat an entire search query phrase of many words as 1 *word*.
+2) If 2 queries lead to an order from the same restaurant, they share the same *context*.
+
+3) Given 2 queries q1 and q2, they compute the pointwise mutual information (PMI) between them as follows -
+
+
+pmi(q1, q2) = log [ p(q1, q2) / ( p(q1)^a * p(q2)^b ) ]
+    where p(q1) is the marginal distribution of q1 defined as ∑_q2▒〖p(q1,q2)〗
+P(q1, q2) can be approximated as the co-occurrence frequency of query q_1 and q_2 within the same context.
