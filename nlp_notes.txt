@@ -1,4 +1,18 @@
-GloVe - Global vectors for word representations - Its an unsupervised learning algorithm for Natural Language Processing
+Word Representation Models - 2 kinds
+
+1) Count-based distribution models. eg -
+    a) SVD (Singular value decomposition)
+    b) PPMI (positive pointwise mutual information) - used in UberEats SearchQuery-Restaurant matching application below.
+
+2) Neural network-based models
+    a) SGNS: Skip-gram negative sampling / Continuous Bag of Words
+    b) GloVe
+
+Paper Levy et al challenges the conventional wisdom that NN-based models are superior to count-based models.
+While model design is important, hyperparameters are also KEY for achieving reasonable results.
+
+------------
+GLOVE - GLOBAL VECTORS FOR WORD REPRESENTATIONS - Its an unsupervised learning algorithm for Natural Language Processing
 https://github.com/stanfordnlp/GloVe
 
 Highlights -
@@ -28,9 +42,78 @@ https://eng.uber.com/uber-eats-query-understanding/
 1) Treat an entire search query phrase of many words as 1 *word*.
 2) If 2 queries lead to an order from the same restaurant, they share the same *context*.
 
-3) Given 2 queries q1 and q2, they compute the pointwise mutual information (PMI) between them as follows -
+3) Given 2 queries q1 and q2, they compute the point-wise mutual information (PMI) between them as follows -
 
 
 pmi(q1, q2) = log [ p(q1, q2) / ( p(q1)^a * p(q2)^b ) ]
     where p(q1) is the marginal distribution of q1 defined as ∑_q2▒〖p(q1,q2)〗
 P(q1, q2) can be approximated as the co-occurrence frequency of query q_1 and q_2 within the same context.
+************************************************************************************************************
+
+Negative sampling is a simplified model of Noise Contrastive Estimation (NCE). NCE guarantees approximation to softmax.
+Negative sampling doesnt.
+
+************************************************************************************************************
+
+DEPENDENCY PARSING LECTURE - BUILDING A TREEBANK vs BUILDING A GRAMMAR
+
+DISADVANTAGE of manually annotated tree bank for sentences -
+1) To get started off with, its a lot slower and less useful than building a grammar.
+
+ADVANTAGES -
+1) Reusability of the labor
+    Many part-of-speech taggers, etc can be built on it. Valuable resource for linguistics.
+
+2) Broad coverage, not just a few intuitions
+3) Frequencies and distributional information
+4) A way to evaluate systems
+------------
+
+Phrase-structure-grammar is also known as context-free-grammar (CFG).
+
+appos - a positional phrase
+
+Prepositions dont have any dependents. `by` is a case marker of Brownback.
+
+Arrow direction from HEAD to DEPENDENT.
+
+Constraint:
+Only 1 word can be a dependent of ROOT.
+
+------------
+
+4 common methods of DEPENDENCY PARSING -
+1) Dynamic programing - O(N^3) algorithm with heads at the ends rather than in the middle.
+2) Graph algorithms - create minimum spanning tree for a sentence.
+3) Constraint satisfaction - edges are eliminated that dont satisfy hard constraints.
+4) used in the assignment - transition-based-parsing or deterministic-dependency-parsing: Greedy choice of attachments
+guided by good ML classifiers. Linear time algorithm. Very scalable. Shift-reduce parser
+
+-----------
+Pre-processing: pass the sentences 1st through a part-of-speech tagger. Then through a shift-reduce parser that attaches
+dependency arrows.
+
+HOW IS ACCURACY MEASURED of SHIFT-REDUCE PARSER?
+
+Accuracy = # correct deps / # of deps
+
+1) 1st look only at dependency arrow directions. This is called Unlabled Accuracy Score (UAS)
+2) Or look at direction of arrow and part of speech. This is Labled Accuracy Score (LAS)
+-------------
+Some part-of-speech tagging terminology:
+
+NP = noun phrase
+NNS = plural noun
+NN = singular noun
+PP = prepositional phrase
+VP = verbal phrase
+NUM = numerical modifier
+AMOD = adjective modifier
+
+POS tags and dependency labels are also represented as d-dimensional vectors. Smaller discrete sets also exhibit
+many semantical similarities. eg - NNS should be close to NN. NUM should be close to AMOD.
+
+************************************************************************************************************
+
+
+
