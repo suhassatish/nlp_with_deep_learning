@@ -115,5 +115,37 @@ many semantical similarities. eg - NNS should be close to NN. NUM should be clos
 
 ************************************************************************************************************
 
+LECTURE8 - RNNs AND LANGUAGE MODELS -
 
+PROBLEM EXAMPLE APPLICATION: Type-ahead search. To predict the next word for example, when the search box contains
+"students opened their _____", to predict word w_j from the vocabulary given the 1st 3 words in the search query.
+
+P(w_j | students opened their) = count(students opened their w_j) / count(students opened their)
+
+2 problems can arise here due to sparsity of matching n-grams in the corpus:
+    a) Numerator can be 0. Partial solution: SMOOTHING. ie, Add small δ to count for every w_j ε V.
+    b) Denominator can be 0. Partial solution: BACKOFF. ie, Just condition on "opened their" if "students opened their"
+        never appears in corpus.
+------------
+NEURAL LANGUAGE MODEL (fixed window) advantages over n-gram-
+1) No sparsity problem
+2) Model size is O(n), not O(exp(n))
+
+DISADVANTAGES -
+1) Each x(i) uses different rows of W. We dont share weights across windows.
+2) Fixed Window is often too small. Increasing window size increases the size of each hidden layer.
+------------
+
+RNN-model - model visual from Lecture 8, slide 26
+
+ADVANTAGES -
+1) Can process any length input
+2) Model size doesnt increase for longer length input
+3) Computation for step t can, in theory, use information from many steps back
+4) Weights are shared across time steps => representations are shared
+
+DISADVANTAGES -
+1) Recurrent computation is slow
+2) In practice, difficult to access info from many steps back
+------------
 

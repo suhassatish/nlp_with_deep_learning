@@ -23,7 +23,8 @@ class Config(object):
     hidden_size = 200
     batch_size = 1024
     n_epochs = 10
-    lr = 0.0005
+    lr = 0.0005  # Note: this is appropriate for Adam Optimizer. SGD has a different optimal learning_rate thumb rule.
+    # Search Google
 
 
 class ParserModel(Model):
@@ -54,6 +55,11 @@ class ParserModel(Model):
         (Don't change the variable names)
         """
         ### YOUR CODE HERE
+        n_features = self.config.n_features
+        n_classes = self.config.n_classes
+        self.input_placeholder = tf.placeholder(tf.int32, shape=(None, n_features))
+        self.labels_placeholder = tf.placeholder(tf.float32, shape=(None, n_classes))
+        self.dropout_placeholder = tf.placeholder(tf.float32)
         ### END YOUR CODE
 
     def create_feed_dict(self, inputs_batch, labels_batch=None, dropout=0):
@@ -79,6 +85,12 @@ class ParserModel(Model):
             feed_dict: The feed dictionary mapping from placeholders to values.
         """
         ### YOUR CODE HERE
+        feed_dict = {
+            self.input_placeholder: inputs_batch,
+            self.dropout_placeholder: dropout
+        }
+        if labels_batch is not None:
+            feed_dict[self.labels_placeholder] = labels_batch
         ### END YOUR CODE
         return feed_dict
 
@@ -100,6 +112,14 @@ class ParserModel(Model):
             embeddings: tf.Tensor of shape (None, n_features*embed_size)
         """
         ### YOUR CODE HERE
+        vocabulary = tf.Variable(self.pretrained_embeddings)  # all the words in the vocabulary encoded as word-vectors
+
+        embeddings = tf.nn.embedding_lookup(vocabulary, self.input_placeholder)
+        # looks up the vocabulary at indexes specified by input_placeholder
+
+        n_features = self.config.n_features
+        embedding_size = self.config.embed_size
+        embeddings = tf.reshape(embeddings, (-1, n_features * embedding_size))
         ### END YOUR CODE
         return embeddings
 
@@ -126,6 +146,23 @@ class ParserModel(Model):
 
         x = self.add_embedding()
         ### YOUR CODE HERE
+        xavier_wt_init_function = xavier_weight_init()
+        n_features = self.config.n_features
+        n_classes = self.config.n_classes
+        embed_size = self.config.embed_size
+        hidden_size = self.config.hidden_size
+        W = tf.Variable(xavier_wt_init_function((n_features * embed_size, hidden_size)))
+
+        # Note: dimension of bias-vector is independent of the # of training examples, M (1 in the shape)
+        b1 = tf.Variable(xavier_wt_init_function((1, hidden_size)))
+
+        U = tf.Variable(xavier_wt_init_function((hidden_size, n_classes)))
+        b2 = tf.Variable(xavier_wt_init_function((1, n_classes)))
+
+        z = tf.add(tf.matmul(x, W), b1)  # Note: observe that its X-dot-W instead of W-dot-X
+        h = tf.nn.relu(z)
+        h_drop = tf.nn.dropout(h, self.dropout_placeholder)
+        pred = tf.add(tf.matmul(h_drop, U), b2)
         ### END YOUR CODE
         return pred
 
@@ -143,6 +180,8 @@ class ParserModel(Model):
             loss: A 0-d tensor (scalar)
         """
         ### YOUR CODE HERE
+        loss_vector = tf.nn.softmax_cross_entropy_with_logits(labels=self.labels_placeholder, logits=pred)
+        loss = tf.reduce_mean(loss_vector)
         ### END YOUR CODE
         return loss
 
@@ -167,6 +206,9 @@ class ParserModel(Model):
             train_op: The Op for training.
         """
         ### YOUR CODE HERE
+        learning_rate = self.config.lr
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        train_op = optimizer.minimize(loss)
         ### END YOUR CODE
         return train_op
 
@@ -181,7 +223,7 @@ class ParserModel(Model):
         prog = tf.keras.utils.Progbar(target=n_minibatches)
         for i, (train_x, train_y) in enumerate(minibatches(train_examples, self.config.batch_size)):
             loss = self.train_on_batch(sess, train_x, train_y)
-            prog.update(i + 1, [("train loss", loss)], force=i + 1 == n_minibatches)
+            prog.update(i + 1, [("train loss", loss)])
 
         print "Evaluating on dev set",
         dev_UAS, _ = parser.parse(dev_set)
