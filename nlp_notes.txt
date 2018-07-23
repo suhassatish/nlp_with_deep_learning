@@ -137,6 +137,7 @@ DISADVANTAGES -
 ------------
 
 RNN-model - model visual from Lecture 8, slide 26
+RNNs apply the same weight W_h at each step.
 
 ADVANTAGES -
 1) Can process any length input
@@ -148,4 +149,23 @@ DISADVANTAGES -
 1) Recurrent computation is slow
 2) In practice, difficult to access info from many steps back
 ------------
+
+The gradient wrt a repeated weight in the matrix W at time t is the sum of the gradient wrt each time it appears.
+
+Traditional EVALUATION METRIC for RNN-language models is PERPLEXITY, ie inverse probability of dataset, normalized
+by number of words.
+
+PP = Π_(t = 1 to T) 1/ [Σ_(j = 1 to |V|) (yj(t) yj_hat(t))]^(1/T)
+
+Lower is better. Minimizing loss is equivalent to minimizing perplexity.
+------------
+
+RNN applications - speech to text, machine translation, text summarization,part-of-speech tagging,
+named entity recognition, text sentiment classification. (These are all called conditional language models)
+
+For sentence classification, we need sentence encoding, an extension of word embeddings. For this, we use the final
+state of a sentence RNN with word embeddings. (slide 49). Whats better than that is teh element-wise max or mean of all
+hidden states.
+-------------
+Microsoft Research open data for NLP applications - https://msropendata.com/
 

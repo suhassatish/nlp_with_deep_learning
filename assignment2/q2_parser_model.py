@@ -21,9 +21,9 @@ class Config(object):
     dropout = 0.5  # (p_drop in the handout)
     embed_size = 50
     hidden_size = 200
-    batch_size = 1024
+    batch_size = 2048
     n_epochs = 10
-    lr = 0.0005  # Note: this is appropriate for Adam Optimizer. SGD has a different optimal learning_rate thumb rule.
+    lr = 0.001  # Note: this is appropriate for Adam Optimizer. SGD has a different optimal learning_rate thumb rule.
     # Search Google
 
 
@@ -62,7 +62,7 @@ class ParserModel(Model):
         self.dropout_placeholder = tf.placeholder(tf.float32)
         ### END YOUR CODE
 
-    def create_feed_dict(self, inputs_batch, labels_batch=None, dropout=0):
+    def create_feed_dict(self, inputs_batch, labels_batch=None, dropout=1):
         """Creates the feed_dict for the dependency parser.
 
         A feed_dict takes the form of:

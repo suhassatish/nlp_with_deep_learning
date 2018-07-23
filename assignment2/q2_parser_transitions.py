@@ -41,6 +41,9 @@ class PartialParse(object):
         if transition == "S":
             self.stack.append(self.buffer.pop(0))
         elif transition == "LA":
+            if len(self.stack) == 1:
+                self.parse_step("S")
+                # return
             dependent, head = self.stack[-2:]
             self.stack.pop(-2)
             self.dependencies.append((head, dependent))
