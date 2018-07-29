@@ -168,4 +168,31 @@ state of a sentence RNN with word embeddings. (slide 49). Whats better than that
 hidden states.
 -------------
 Microsoft Research open data for NLP applications - https://msropendata.com/
+--------------
+RNN notes for language modeling-
+1) Loss for a single sequence = avg of cross-entropy loss of all words in a sequence
+
+2) When reporting performance of a language model, metric generally used is PERPLEXITY, which is the inverse probability
+    of correct word.
+    Cross-entropy = log(perplexity)
+3) Minimizing the geometric mean of perplexity is equivalent to minimizing the arithmetic mean of cross-entropy across
+    the training set.
+
+4) Heirarchical softmax computation at the output layer of an RNN is the slowest, most computationally expensive step.
+    With time complexity O(D_h * |V|). Asuming |V| the #words in vocabulary >> D_h , the number of hidden units per
+    layer.
+
+    It can be sped-up to a certain extent with negative sampling, although that only improves training time and not
+    testing time.
+************************************************************************************************************
+
+
+
+
+
+
+
+
+
+
 
