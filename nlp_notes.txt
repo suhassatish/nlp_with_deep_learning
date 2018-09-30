@@ -180,19 +180,118 @@ RNN notes for language modeling-
 
 4) Heirarchical softmax computation at the output layer of an RNN is the slowest, most computationally expensive step.
     With time complexity O(D_h * |V|). Asuming |V| the #words in vocabulary >> D_h , the number of hidden units per
-    layer.
+    layer. Softmax converts output scores into a probability distribution.
 
     It can be sped-up to a certain extent with negative sampling, although that only improves training time and not
     testing time.
+
 ************************************************************************************************************
 
+LECTURE9 - VANISHING GRADIENTS AND FANCY RNNs
 
+1) Main concept: While taking derivatives with respect to the various matrices for back-propagation, there is a chain
+    rule-derived term to calculate derivative of next hidden state wrt previous hidden state (dh_t / dh_k).
+    That can quickly become zero (vanishing gradient) or infinity (exploding gradient). Hence, the LOCALITY ASSUMPTION
+    OF GRADIENT DESCENT BREAKS DOWN.
+    Some intuitions:
+    a) Gradients can be seen as a measure of influence of the past on the future.
+    b) When we observe the gradients backpropagating in time going to 0, we cannot be sure if
+        (i) the future is not influenced by the past
+        OR
+        (ii) wrong cfg of params
 
+SOLUTIONS TO THE VANISHING GRADIENT PROBLEM:
+1) Initialize the W(*)s to identity matrix I and f(z) to rect(z) = max(z, 0) aka ReLU. These make a HUGE difference!
+2) Keep around memories to capture long distance dependencies.
+3) Allow error messages to flow at different strengths depending on the inputs.
+    2) and 3) together are implemented with GRUs (gated recurrent unit) and LSTMs (long short term memory).
 
+---------------
+GRUs - Lecture 9, slide 20
 
+Example application of GRU where simple memory-less RNN fails:
+    Jane walked into the room. John walked in too. It was late in the day. Jane said hi to _____.
 
+    1) It has 2 gates - an update gate (z_t) and a reset gate (r_t).
+    2) It has a memory unit ~h_t
+    3) If reset gate unit is ~0, then this ignores previous memory and only stores the new word information.
+        This allows model to drop information that is irrelevant in future.
 
+    4) Final memory h_t combines current and previous time steps. h_t = z_t o h_(t-1) + (1 - z_t) o ~h_t
 
+    5) Update gate z controls how much of past state should matter now. If z ~= 1, we can copy info in that unit thru
+        many time steps.
 
+    6) Units with short-term dependencies often have reset gates very active.
 
+    7) Units with long term dependencies have active update gates z.
+
+    8) GRUs are much more versatile and adaptive than vanilla RNNs in which elements of the hidden vector h they update.
+---------------
+LSTMs - Lecture 9, slide 28
+
+Has 3 gates - input gate, forget gate and output gate. Each cell can be controlled whether to forget its contents or not
+
+Research results: An ensemble of 5 LSTMs with a beam of size 2 is cheaper than a single LSTM with a beam of size 12.
+---------------
+Bi-directional RNNs - For classification, incorporates info from words both preceding and following.
+    Hidden layer now represents (Summarizes) the past and future around a single token.
+---------------
+TIPS FOR TRAINING A GATED RNN
+
+1) Use an LSTm or GRU: it makes your life so much simpler
+2) Initialize recurrent matrices to be orthogonal.
+3) Initialize other matrices with a sensible (small) scale
+4) Initialize forget bias to 1: default to remembering
+5) Use adaptive learning rate algorithms: Adam, AdaDelta
+6) Clip the norm of the gradient: 1-5 seems to be a reasonable threshold when used together with Adam or AdaDelta
+7) Either only dropout vertically or learn how to do it right.
+8) Be patient!
+************************************************************************************************************
+LECTURE 10 - STATISTICAL VS NEURAL MACHINE TRANSLATION (SMT VS NMT)
+
+1) SMT - core idea: learn a probabilistic model from data. ALIGNMENT is complex (French to English translations
+are not always word to word, ie not always 1-1. There could be 1-many or many-1 mappings.
+    a) Uses Bayes rule to break down into 2 separate models learnt independently - 1 language model and another
+        translation model.
+
+2) NMT is a technique of 2-RNNs used sequentially, the neural architecture is called sequence-to-sequence.
+    a) Encoder RNN produces an encoding of the source sentence. Decoder RNN is a Language Model that generates
+        target sentences conditioned on encoding.
+
+ADVANTAGES of NMT -
+1) Better performance - more fluent, better use of context, better use of phrase similarities
+2) A single neural network to be optimized end-to-end. No subcomponents to be individually optimized.
+3) Requires much less human engineering effort. No feature engineering, same method for all language pairs.
+
+DISADVANTAGES OF NMT -
+1) NMT is less interpretable, hard to debug
+2) NMT is difficult to control. Cant easily specify rules or guidelines for translation. => Safety concerns
+
+EVALUATING TRANSLATIONS -
+1) Compare n-grams usually 3 or 4-grams to human translations. But a sentence can have many translations and even good
+    ones can get poor scores if they dont align with the human labeled version. BLEU (Bilingual Evaluation Understudy)
+
+ATTENTION is a way to focus on particular parts of the input.
+    1) Improves sequence-to-sequence a lot. Its very useful to
+    2) Allows decoder to focus on certain parts of the source.
+    3) Attention solves the bottlenexk problem of decoder relying too much on the last hidden state of the encoder.
+        It allows decoder to look directly at the source, bypassing the bottleneck.
+
+    4) Attention helps with the vanishing gradient problem, and provides a shortcut to far away states.
+
+    5) Attention provides some interpretability. By inspecting the attention distribution, we can see what the decoder
+        was focusing on. We get alignment for free.
+
+Resources: https://www.youtube.com/watch?v=quoGRI-1l0A
+Deeplearning.ai Andrew Ng, illustration @ time 9:42 in video above.
+
+************************************************************************************************************
+
+TODO: Question to Martin:
+
+1) In assignment 3 example for q1, why is the sentence "Chris Manning is awesome"
+represented as [[1,9], [2,9], [3,8], [4,8]] ?
+
+2) how is accuracy so high inspite of precision/recall being so low in `python q1_window.py test2`?
 

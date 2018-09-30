@@ -1,0 +1,37 @@
+Fri, Aug 3, 2018 -
+
+Find High impact, high  feasibility (low cost) projects in industry: mental models
+    1) cheap prediction
+    2) automate complex SW pipelines
+    3) eg - rules-based model tuning can be automated using ML
+    4) what are accuracy requirements? (reco engine 60% is good enough)
+    5) how costly are wrong predictions?
+
+----------
+Choosing a metric -
+    1) Combine metrics to optimize a single number
+    2) Formula will and can change
+
+----------
+Choosing baseline for lower bound on performance
+----------
+
+Day 2 -
+Debugging DL models -
+Start with simplest model, add complexity later.
+
+Sensible default for adam optz learning rate is 3e-4
+
+activations - relu( FC and conv models), tanh for LSTMs
+
+Init: normal (relu), glorot normal (tanh).
+
+regularization: initially none. Makes it hard to debug.
+
+data normalization: none.
+
+Normalize scale fo input data by subtracting mean and dividing by std dev
+
+---
+start with small data set -
+10K images for training, 1k for validation, 500 for test.
