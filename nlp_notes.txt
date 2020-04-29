@@ -1,3 +1,61 @@
+************************************************************************************************************
+Feb 28, 2020 - REALM paper reading by e.ai research - Retrieval-Augmented Language Model Pre-Training
+
+Maximum inner product search (MIPS) algorithm to find the approximate top K documents that scales sub-linearly with
+increase in documents.
+
+Pre-trained on [MASK] language model (LM). There are roughly 2 types of predictions -
+    1) 1 is syntactic based prediction.  eg - predicting prepositions. Grammar-based prediction.
+    2) 2nd requires context from vocabulary.
+---
+Select and mask salient spans within a sentence for masked LM task.
+
+Null document added to top-k to model the case when prediction doesnt require any additional context.
+-----
+Warm up the model in cold start situation by doing another pre-training task. The BERT embedding to capture the
+similarity between query and document. This is called Inverse Cloze Task. This initialization is key for DOT product
+to capture relevance.
+
+
+************************************************************************************************************
+NLP Models Playlist (recommended by Ankur which goes from basic to advanced)
+1. Take Andrew Ng's course on Sequence models first
+2. 2014 - Google - [1409.3215] Sequence to Sequence Learning with Neural Networks (seq2seq)
+3. 2015 - Bengio - [1409.0473] Neural Machine Translation by Jointly Learning to Align and Translate (main attention paper)
+4. 2017 - Google - [1706.03762] Attention Is All You Need (Transformer)
+4a. 2020 - Google - [2001.04451] Reformer: The Efficient Transformer
+4b. 2018 - Google - [1810.04805] BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+4c. 2018 - OpenAI - https://openai.com/blog/language-unsupervised/ (GPT)
+4d. 2019 - OpenAI - https://openai.com/blog/better-language-models/ (GPT2)
+************************************************************************************************************
+Building Language Technologies for Social Good  - e.ai guest speaker - Fri, Jan 31, 2020
+model changes a biased text to non biased. evaluated for fluency, retaining the same meaning and reducing bias.
+
+Diyi Yang is an assistant professor in the School of Interactive Computing at Georgia Tech
+
+sentence encoder, then Document encoder
+sentence level classification loss , then how persuasive the document is. combine these 2 loss functions.
+
+github.com/Vasonv/Persuasion_Strategy
+---
+Neutralizing Biased Text - eg - in news headlines.
+inappropriate subjectivity in language - attitudes, presuppositions, casting doubt
+
+3 types of subjectivity bias -
+    a) framing bias
+    b) epistemological bias
+    c) demographic bias
+
+2 methods - concurrent vs modular
+concurrent - is easier to train but opaque and not interpretable
+modular - is interpretable but not straight forward to train.
+---
+
+Modeling social roles via Gaussian Mixture Model
+---
+
+
+************************************************************************************************************
 Word Representation Models - 2 kinds
 
 1) Count-based distribution models. eg -
@@ -288,10 +346,87 @@ Deeplearning.ai Andrew Ng, illustration @ time 9:42 in video above.
 
 ************************************************************************************************************
 
-TODO: Question to Martin:
+Service Einstein DS - Paper reading session, Fri Oct 5, 2018. Edgar Valesco on transfer learning papers
 
-1) In assignment 3 example for q1, why is the sentence "Chris Manning is awesome"
-represented as [[1,9], [2,9], [3,8], [4,8]] ?
+PAPER 0: ELMo (AllenNLP)
+PAPER 1 : ULMFIT (fastAI)
+Problem: Small data , models overfit. Catastrophic forgetting.
+NLP models are more shallow than Computer Vision models. Thats what they solve in this paper.
 
-2) how is accuracy so high inspite of precision/recall being so low in `python q1_window.py test2`?
+Solution: Inductive transfer learning for any NLP task. Similar to fine tuning imageNet models.
+
+REFERRING TO DIAGRAMS (3-columns ) in paper:
+If you're doing case classification, you fine tune on case text thats relevant for each org. 2 techniques -
+1) discriminative fine tuning - different training for each layer. Slowly increases LEARNING RATE with each layer,
+    and decreases in triangle shape.
+
+2) 3 layer LSTM, add 2 linear layers on top of that. ReLu and softmax, feed forward NN.
+    Shaded rectangles on the right. Most general features are on bottom. Layer 3 you unfreeze 1st, tune for 1 epoch,
+    then unfreeze layer2 (while keeping layer 3 unfrozen) , 2 e pochs , and so on until convergence.
+
+Outperforming state of the art on 6 tasks. Single arch across a ,b,c . With No feature engg or preprocessing, no
+    additional labels. Use wikiText from wikipedia. Least explored part of the paper.
+----
+Part 2 : Target task LM fine-tuning. Discriminative fine-tuning tune each layer with different learning rates.
+
+Part3 - Target task classifier fine-tuning.
+Use BatchNorm, Dropout. Maxpool hidden states from previous time stamps and do as many as they fit in GPU memory.
+
+Last trick: gradual unfreezing, 1-layer at a time and training until convergence.
+
+Q: do they evaluate how it performs w/o 2nd step?
+A: they have some cool studies
+---------------
+PAPER 2 : OpenAI transformer
+
+Previous 2 approaches use RNN. This one doesnt, it uses something complex called a transformer.
+************************************************************************************************************
+Service Einstein DS - Paper reading session, Fri Oct 12, 2018. Feifei Jiang
+
+labeling - web scraping. But noisy, Not very reliable.
+
+Noise layer = normalized confusion matrix? Yes.
+
+DNN -> softmax -> Q (linear TX) -> NLL
+                   Noise layer
+
+y~ = noisy label
+y* = true label
+
+Estimating noise matrix Q with clean data.
+
+Since matrix inversion is not always computationally feasible, you transform it into an optimization problem where
+you minimize min(C*R - C~)
+-----
+you minimize trace(Q).
+
+-------
+Re-weighting of Noisy data - log likelihood of noisy data with a gamma parameter to down weight the noisy term.
+
+To verify the model, 2 types of experiments.
+1) where they noise distribution. Image has house number. 26k test data. 600 training data images of door numbers.
+Swap training data labels to make it noisy.
+
+2) on noisy data where its unknown which is a noisy label vs not.
+
+2% improvement in computer vision is a significant improvement.
+
+************************************************************************************************************
+BERT presentation - DS journal club
+
+1) 3 embedding layers linearly added instead of 1 - token embedding + segmentation embedding + position embedding
+Word-piece segmentation: Decode & encode 100%. Word-piece doesnt do that. Splitting words based on capitalization.
+Capitalization is a big tell for named-entity recognition.
+************************************************************************************************************
+Globally-Locally Self-Attentive Dialogue State Tracker - Feifei paper presentation Fri, Feb 1, 2018
+
+1) Action encoder
+2) Utterance encoder
+3) Slot-value encoder
+
+KEY TAKE-AWAY - if you dont have enough training instances, ie if you only have 0-100 training data rows,
+then GLAD model (with global and local bi-LSTM and with global & local self-attention) outperforms the simpler
+models without either global or local model.
+
+
 
